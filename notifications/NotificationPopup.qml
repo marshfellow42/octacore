@@ -1,0 +1,96 @@
+import Quickshell
+import Quickshell.Wayland
+import Quickshell.Services.Notifications
+import qs.theme
+import QtQuick
+import QtQuick.Layouts
+
+PanelWindow {
+    anchors {
+        top: true
+        right: true
+    }
+
+    margins {
+        top: 12
+        right: 12
+    }
+
+    implicitWidth: 350
+    implicitHeight: Math.max(1, column.implicitHeight)
+    color: "transparent"
+
+    ColumnLayout {
+        id: column
+        width: parent.width
+        spacing: 10
+
+        Repeater {
+            model: Notifications.trackedNotifications
+
+            delegate: Rectangle {
+                id: card
+                required property var modelData
+
+                Timer {
+                    running: card.modelData.urgency !== NotificationUrgency.Critical
+                    interval: 5000
+                    onTriggered: card.modelData.dismiss()
+                }
+
+                Layout.fillWidth: true
+                Layout.preferredHeight: layout.implicitHeight + 20
+                radius: 8
+                color: MatugenColors.colors.surfaceContainerLowest
+                border.width: 2
+                border.color: card.modelData.urgency === NotificationUrgency.Critical ? MatugenColors.colors.error : MatugenColors.colors.primary
+
+                RowLayout {
+                    id: layout
+                    anchors.fill: parent
+                    anchors.margins: 10
+                    spacing: 10
+
+                    Image {
+                        Layout.preferredHeight: 36
+                        Layout.preferredWidth: 36
+                        Layout.alignment: Qt.AlignTop
+                        fillMode: Image.PreserveAspectFit
+                        visible: source.toString() !== ""
+                        source: card.modelData.image || card.modelData.appIcon || ""
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 2
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: card.modelData.summary
+                            color: MatugenColors.colors.surfaceOn
+                            font.family: Layout.notificationsFontFamily
+                            font.pixelSize: Layout.notifications.headingFontSize
+                            font.bold: true
+                            elide: Text.ElideRight
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            visible: text !== ""
+                            text: card.modelData.body
+                            color: MatugenColors.colors.surfaceOn
+                            font.family: Layout.notificationsFontFamily
+                            font.pixelSize: Layout.notifications.contentFontSize
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: card.modelData.dismiss()
+                }
+            }
+        }
+    }
+}

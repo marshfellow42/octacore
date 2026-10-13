@@ -1,0 +1,74 @@
+{
+    "general": { 
+        "fontFamily": "JetBrains Mono Nerd Font",
+        "fontSize": 16,
+        "locale": "en",
+        "cornerRadius": 100
+    },
+    "bar": {
+        "fontFamily": "JetBrains Mono Nerd Font",
+        "fontSize": 16,
+        "height": 60,
+        "bottomMargin": -15,
+        "cornerRadius": 100,
+        "workspaces": {
+            "fontFamily": "JetBrains Mono Nerd Font",
+            "fontSize": 16
+        },
+        "music": {
+            "icon": {
+                "fontSize": 0
+            },
+            "label": {
+                "fontFamily": "Google Sans Medium",
+                "fontSize": 0
+            }
+        },
+        "weather": {
+            "icon": {
+                "fontSize": 0
+            },
+            "label": {
+                "fontFamily": "Google Sans Medium",
+                "fontSize": 0
+            }
+        },
+        "network": {
+            "icon": {
+                "fontSize": 0
+            },
+            "label": {
+                "fontFamily": "Google Sans Medium",
+                "fontSize": 0
+            }
+        },
+        "volume": {
+            "icon": {
+                "fontSize": 0
+            },
+            "label": {
+                "fontFamily": "Google Sans Medium",
+                "fontSize": 0
+            }
+        },
+        "battery": {
+            "icon": {
+                "fontSize": 0
+            },
+            "label": {
+                "fontFamily": "Google Sans Medium",
+                "fontSize": 0
+            }
+        },
+        "clock": {
+            "fontFamily": "JetBrains Mono Nerd Font",
+            "fontSize": 16
+        }
+    },
+    "notifications": {
+        "fontFamily": "JetBrains Mono Nerd Font",
+        "timeout": 5000,
+        "headingFontSize": 14,
+        "contentFontSize": 12
+    }
+}

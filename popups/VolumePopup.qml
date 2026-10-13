@@ -1,0 +1,243 @@
+import Quickshell
+import Quickshell.Wayland
+import Quickshell.Services.Pipewire
+import QtQuick
+import QtQuick.Effects
+import qs.theme
+import qs.i18n
+
+Variants {
+    id: root
+    model: Quickshell.screens
+
+    delegate: PanelWindow {
+        id: volumeOsdPopup
+
+        required property var modelData
+        screen: modelData
+
+        implicitWidth: 380
+        implicitHeight: 136
+
+        color: "transparent"
+        visible: showOsd
+
+        anchors {
+            bottom: true
+        }
+
+        margins {
+            bottom: 70
+        }
+
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.namespace: "volume_osd"
+        WlrLayershell.exclusionMode: ExclusionMode.Ignore
+        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+
+        readonly property var activeSink: Pipewire.defaultAudioSink
+        readonly property bool isMuted: activeSink?.audio?.muted ?? true
+        readonly property real volumeLevel: activeSink?.audio?.volume ?? 0.0
+
+        PwObjectTracker {
+            objects: volumeOsdPopup.activeSink ? [volumeOsdPopup.activeSink] : []
+        }
+
+        onVolumeLevelChanged: {
+            triggerOsd();
+        }
+
+        onIsMutedChanged: {
+            triggerOsd();
+        }
+
+        property bool isInitialized: false
+        property bool showOsd: false
+
+        Timer {
+            id: initTimer
+            interval: 1000
+            running: true
+
+            onTriggered: volumeOsdPopup.isInitialized = true
+        }
+
+        Timer {
+            id: hideTimer
+            interval: 2000
+
+            onTriggered: {
+                volumeOsdPopup.showOsd = false;
+            }
+        }
+
+        function triggerOsd() {
+            if (!isInitialized)
+                return;
+
+            showOsd = true;
+            hideTimer.restart();
+        }
+
+        Item {
+            anchors.fill: parent
+
+            Rectangle {
+                id: pill
+
+                width: 250
+                height: 78
+                anchors.centerIn: parent
+
+                radius: height / 2
+
+                // The Volume OSD background
+                color: MatugenColors.colors.surfaceContainerLowest
+
+                layer.enabled: true
+                layer.effect: MultiEffect {
+                    shadowEnabled: true
+                    shadowBlur: 1.0
+                    shadowColor: "#40000000"
+                    shadowVerticalOffset: 6
+                }
+
+                Row {
+                    anchors.fill: parent
+                    anchors.leftMargin: 22
+                    anchors.rightMargin: 24
+                    spacing: 16
+
+                    Item {
+                        id: volumeIconWrapper
+                        implicitWidth: 20
+                        implicitHeight: 20
+                        anchors.verticalCenter: parent.verticalCenter
+                        Text {
+                            id: volumeIcon
+                            anchors.centerIn: parent
+                            color: volumeOsdPopup.isMuted ? MatugenColors.colors.error : MatugenColors.colors.primary
+                            font {
+                                family: Layout.fontFamily
+                                pixelSize: 28
+                            }
+                            text: {
+                                if (!volumeOsdPopup.activeSink?.audio)
+                                    return "󰸈";
+                                if (volumeOsdPopup.isMuted)
+                                    return "󰝟";
+                                if (volumeOsdPopup.volumeLevel > 0.5)
+                                    return "󰕾";
+                                if (volumeOsdPopup.volumeLevel > 0)
+                                    return "󰖀";
+
+                                return "󰕿";
+                            }
+                        }
+                    }
+
+                    Column {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width - volumeIcon.width - parent.spacing - 6
+                        spacing: 8
+
+                        Item {
+                            width: parent.width
+                            height: volumeLabel.implicitHeight
+
+                            Text {
+                                text: Translations.tr("osd.volume")
+                                anchors.left: parent.left
+                                anchors.verticalCenter: parent.verticalCenter
+                                color: MatugenColors.colors.surfaceOn
+
+                                font {
+                                    family: "Google Sans Medium"
+                                    pixelSize: 16
+                                }
+                            }
+
+                            // The volume number indicator
+                            Text {
+                                id: volumeLabel
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                color: MatugenColors.colors.surfaceOn
+
+                                font {
+                                    family: "Google Sans Medium"
+                                    pixelSize: 16
+                                }
+
+                                text: volumeOsdPopup.activeSink?.audio ? Math.round(volumeOsdPopup.volumeLevel * 100) : "--"
+                            }
+                        }
+
+                        Item {
+                            width: parent.width
+                            height: 6
+
+                            readonly property real visualVolume: Math.min(volumeOsdPopup.volumeLevel, 1.0)
+                            readonly property int gap: 4
+
+                            Rectangle {
+                                id: activeTrack
+                                x: 0
+                                y: 0
+                                height: parent.height
+
+                                width: (parent.width - 4) * parent.visualVolume
+                                radius: height / 2
+
+                                // The current volume strip line
+                                color: MatugenColors.colors.primary
+                                // color: volumeOsdPopup.isMuted ? MatugenColors.colors.error : MatugenColors.colors.primary
+
+                                Behavior on width {
+                                    SpringAnimation {
+                                        spring: 11.0
+                                        damping: 0.3
+                                        mass: 1.0
+                                    }
+                                }
+                            }
+
+                            Item {
+                                id: inactiveTrackContainer
+                                x: activeTrack.width + parent.gap
+                                y: 0
+                                height: parent.height
+
+                                width: Math.max(0, parent.width - activeTrack.width - parent.gap)
+
+                                clip: true
+
+                                Rectangle {
+                                    anchors.right: parent.right
+                                    height: parent.height
+
+                                    // The remaining volume strip line
+                                    width: Math.max(parent.width, height)
+                                    radius: height / 2
+                                    color: MatugenColors.colors.surfaceContainerHighest
+
+                                    // The tiny dot at the end of the OSD
+                                    Rectangle {
+                                        anchors.right: parent.right
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        anchors.rightMargin: 1.5
+                                        width: 5
+                                        height: 5
+                                        radius: 2.5
+                                        color: MatugenColors.colors.outline
+                                        // color: volumeOsdPopup.isMuted ? MatugenColors.colors.error : MatugenColors.colors.outline
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
